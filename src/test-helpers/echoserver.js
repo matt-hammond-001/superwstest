@@ -18,10 +18,13 @@ export default () => {
         ws.close(4321, 'Oops');
         return;
       }
-      if (message.startsWith('wait ')) {
+      const match = message.match(/^wait ([0-9]+) (.+)$/);
+      if (match) {
+        const delayMs = Number(match[1]);
+        const reply = match[2];
         setTimeout(
-          () => { ws.send(message); },
-          Number(message.substring(5)),
+          () => { ws.send(reply); },
+          delayMs,
         );
         return;
       }

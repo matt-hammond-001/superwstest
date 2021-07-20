@@ -173,9 +173,10 @@ describe('superwstest', () => {
     try {
       await request(server)
         .ws('/path/ws')
-        .expectText('hello')
-        .send('wait 2000')
-        .expectText('wait 2000', { timeout: 5 });
+        .expectText()
+        .send('wait 2001 fooey')
+        .expectText('fooey', { timeout: 5 })
+        .close();
     } catch (e) { errorRaised = true; }
     expect(errorRaised).toBe(true);
   });
@@ -183,9 +184,9 @@ describe('superwstest', () => {
   it('does not stop execution if a message arrives within a timeout', async () => {
     await request(server)
       .ws('/path/ws')
-      .expectText('hello')
-      .send('wait 200')
-      .expectText('wait 200', { timeout: 500 })
+      .expectText()
+      .send('wait 201 fooey2')
+      .expectText('fooey2', { timeout: 500 })
       .close();
   });
 
@@ -211,6 +212,28 @@ describe('superwstest', () => {
       .expectJson({ foo: 'bar' })
       .sendText('{ "foo": "bar", "zig": "zag" }')
       .expectJson({ foo: 'bar', zig: 'zag' })
+      .close();
+  });
+
+  it('stops execution if a timeout happens waiting for JSON', async () => {
+    let errorRaised = false;
+    try {
+      await request(server)
+        .ws('/path/ws')
+        .expectText()
+        .send('wait 2000 { "foo" : "bar1" }')
+        .expectJson({ foo: 'bar1' }, { timeout: 5 })
+        .close();
+    } catch (e) { errorRaised = true; }
+    expect(errorRaised).toBe(true);
+  });
+
+  it('does not stop execution if a JSON message arrives within a timeout', async () => {
+    await request(server)
+      .ws('/path/ws')
+      .expectText()
+      .send('wait 200 { "foo" : "bar2" }')
+      .expectJson({ foo: 'bar2' }, { timeout: 500 })
       .close();
   });
 
