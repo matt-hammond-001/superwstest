@@ -87,11 +87,14 @@ const wsMethods = {
   }),
   wait: (ws, ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   exec: async (ws, fn) => fn(ws),
-  expectMessage: async (ws, conversion, check = undefined) => {
+  expectMessage: async (ws, conversion, check = undefined, { timeout = undefined } = {}) => {
     const received = await Promise.race([
       ws.messages.pop(),
       ws.closed.then(({ code, message }) => {
         throw new Error(`Expected message ${stringify(check)}, but connection closed: ${code} "${message}"`);
+      }),
+      new Promise((resolve) => { if (timeout > 0) { setTimeout(resolve, timeout); } }).then(() => {
+        throw new Error(`Excepted message within ${timeout}ms, but nothing arrived`);
       }),
     ]).then(conversion);
     if (check === undefined) {
@@ -106,7 +109,7 @@ const wsMethods = {
       throw new Error(`Expected message ${stringify(check)}, got ${stringify(received)}`);
     }
   },
-  expectText: (ws, expected) => {
+  expectText: (ws, expected, options) => {
     let check;
     if (expected instanceof RegExp) {
       check = (value) => expected.test(value);
@@ -114,10 +117,10 @@ const wsMethods = {
     } else {
       check = expected;
     }
-    return wsMethods.expectMessage(ws, msgText, check);
+    return wsMethods.expectMessage(ws, msgText, check, options);
   },
-  expectJson: (ws, check) => wsMethods.expectMessage(ws, msgJson, check),
-  expectBinary: (ws, expected) => {
+  expectJson: (ws, check, options) => wsMethods.expectMessage(ws, msgJson, check, options),
+  expectBinary: (ws, expected, options) => {
     let check;
     if (typeof expected === 'function') {
       check = expected;
@@ -126,7 +129,7 @@ const wsMethods = {
       check = (value) => compareBinary(value, norm);
       check.expectedMessage = stringify(norm);
     }
-    return wsMethods.expectMessage(ws, msgBinary, check);
+    return wsMethods.expectMessage(ws, msgBinary, check, options);
   },
   close: (ws, code, message) => ws.close(code, message),
   expectClosed: async (ws, expectedCode = null, expectedMessage = null) => {

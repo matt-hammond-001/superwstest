@@ -18,6 +18,13 @@ export default () => {
         ws.close(4321, 'Oops');
         return;
       }
+      if (message.startsWith('wait ')) {
+        setTimeout(
+          () => { ws.send(message); },
+          Number(message.substring(5)),
+        );
+        return;
+      }
       if (message.startsWith('{')) {
         ws.send(message);
       } else {

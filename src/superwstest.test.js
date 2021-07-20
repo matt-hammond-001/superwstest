@@ -168,6 +168,27 @@ describe('superwstest', () => {
     expect(runs).toEqual(1);
   });
 
+  it('stops execution if a timeout happens', async () => {
+    let errorRaised = false;
+    try {
+      await request(server)
+        .ws('/path/ws')
+        .expectText('hello')
+        .send('wait 2000')
+        .expectText('wait 2000', { timeout: 5 });
+    } catch (e) { errorRaised = true; }
+    expect(errorRaised).toBe(true);
+  });
+
+  it('does not stop execution if a message arrives within a timeout', async () => {
+    await request(server)
+      .ws('/path/ws')
+      .expectText('hello')
+      .send('wait 200')
+      .expectText('wait 200', { timeout: 500 })
+      .close();
+  });
+
   it('closes if an expectation is not met', async () => {
     let ws;
     try {
