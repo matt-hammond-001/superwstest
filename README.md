@@ -99,9 +99,9 @@ provide compatibility with native supertest requests such as `post`,
 
 - [request(server[, options])](#requestserver-options)
 - [request(...).ws(path[, protocols][, options])](#requestserverwspath-protocols-options)
-  - [.expectText([expected])](#expecttextexpected)
-  - [.expectJson([expected])](#expectjsonexpected)
-  - [.expectBinary([expected])](#expectbinaryexpected)
+  - [.expectText([expected][, opts])](#expecttextexpected)
+  - [.expectJson([expected][, opts])](#expectjsonexpected)
+  - [.expectBinary([expected][, opts])](#expectbinaryexpected)
   - [.sendText(text)](#sendtexttext)
   - [.sendJson(json)](#sendjsonjson)
   - [.sendBinary(data)](#sendbinarydata)
@@ -146,7 +146,7 @@ request(myServer)
   .ws('/path/ws', { headers: { cookie: 'foo=bar' } })
 ```
 
-### `.expectText([expected])`
+### `.expectText([expected][, opts])`
 
 Waits for the next message to arrive then checks that it matches the given
 text (exact match), regular expression, or function. If no parameter is
@@ -158,6 +158,7 @@ request(server).ws('...')
   .expectText(/^hel*o$/) // RegExp matching
   .expectText((actual) => actual.includes('lo')) // function
   .expectText()          // just check message is text
+  .expectText('hello', {timeout:500})   // must arrive within 500ms
 ```
 
 When using a function, the check will be considered a failure if it
@@ -172,7 +173,12 @@ request(server).ws('...')
   })
 ```
 
-### `.expectJson([expected])`
+The `opts` parameter is an optional object containing additional options:
+ * `timeout` (Number) - the number of milliseconds that the message is
+   expected to arrive within. Try to avoid using it, unless really necessary
+   as it may cause intermittent failures in tests due to timing variations.
+
+### `.expectJson([expected][, opts])`
 
 Waits for the next message to arrive, deserialises it using `JSON.parse`,
 then checks that it matches the given data (deep equality) or function.
@@ -183,6 +189,7 @@ request(server).ws('...')
   .expectJson({ foo: 'bar', zig: ['zag'] })       // exact match
   .expectJson((actual) => (actual.foo === 'bar')) // function
   .expectJson() // just check message is valid JSON
+  .expectJson({ foo: 'bar', zig: ['zag'] }, {timeout:500})   // must arrive within 500ms
 ```
 
 When using a function, the check will be considered a failure if it
@@ -197,7 +204,10 @@ request(server).ws('...')
   })
 ```
 
-### `.expectBinary([expected])`
+The `opts` parameter is an optional object containing additional options.
+See `.expectText()` for a description of the available options.
+
+### `.expectBinary([expected][, opts])`
 
 Waits for the next message to arrive then checks that it matches the given
 array / buffer (exact match) or function. If no parameter is given,
@@ -211,6 +221,7 @@ request(server).ws('...')
   .expectBinary(new Uint8Array([10, 20, 30]))
   .expectBinary((actual) => (actual[0] === 10)) // function
   .expectBinary() // just check message is binary
+  .expectBinary(new Uint8Array([10, 20, 30]), {timeout:500})   // must arrive within 500ms
 ```
 
 When using a function, the check will be considered a failure if it
@@ -224,6 +235,9 @@ request(server).ws('...')
     expect(actual[0]).toBeGreaterThan(2);
   })
 ```
+
+The `opts` parameter is an optional object containing additional options.
+See `.expectText()` for a description of the available options.
 
 ### `.sendText(text)`
 
